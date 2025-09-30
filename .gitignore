@@ -115,5 +115,7 @@ $RECYCLE.BIN/
 *.lnk
 
 #Others
+venv/
+__pycache__/
 
 #!! ERROR: mac is undefined. Use list command to see defined gitignore types !!#

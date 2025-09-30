@@ -54,7 +54,7 @@ cd SoccerStats
 
 2. Créer un environnement virtuel (optionnel mais recommandé) :  
 ```bash
-python -m venv venv
+python3 -m venv venv
 source venv/bin/activate  # Sur Windows : venv\Scripts\activate
 ```
 
