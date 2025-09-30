@@ -87,3 +87,39 @@ def flatten_multiindex_columns(df: pd.DataFrame) -> pd.DataFrame:
     if isinstance(df.columns, pd.MultiIndex):
         df.columns = ["_".join([c for c in col if c and c != ""]) for col in df.columns]
     return df
+
+def load_and_flatten_csv(path):
+    # Lire avec 2 lignes d'entêtes
+    df = pd.read_csv(path, header=[0, 1])
+    
+    # Prendre le 2ème niveau s’il existe, sinon le 1er
+    df.columns = [
+        col[1] if not col[1].startswith("Unnamed") else col[0] 
+        for col in df.columns.values
+    ]
+    
+    return df
+
+def merge_defense_passing(def_csv="Defensive.csv", pass_csv="Passing.csv", output_csv=None):
+    df_def = load_and_flatten_csv(def_csv)
+    df_pass = load_and_flatten_csv(pass_csv)
+
+    print("Colonnes DEF:", df_def.columns[:10].tolist())
+    print("Colonnes PASS:", df_pass.columns[:10].tolist())
+
+    # Clés de merge
+    keys = [c for c in ["Player", "Squad", "Nation", "Pos", "Comp", "Age", "Born", "90s"] 
+            if c in df_def.columns and c in df_pass.columns]
+
+    if not keys:
+        raise Exception("Aucune colonne commune trouvée pour fusionner.")
+
+    merged = pd.merge(df_def, df_pass, on=keys, how="inner", suffixes=("_def", "_pass"))
+
+    if output_csv:
+        merged.to_csv(output_csv, index=False)
+        print(f"✅ Fichier fusionné sauvegardé dans {output_csv}")
+
+    return merged
+
+df_merged = merge_defense_passing("Defensive.csv", "Passing.csv", "Merged.csv")
