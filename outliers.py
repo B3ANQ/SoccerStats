@@ -212,7 +212,7 @@ def main():
     try:
         create_cleaned_directory()
         
-        data_files = ['Defensive.csv', 'keepers.csv', 'Passing.csv', 'top5-players.csv', 'Compétences - SoccerStats.xlsx']
+        data_files = [f for f in os.listdir('datas') if f.endswith(('.csv', '.xlsx'))]
         
         for filename in data_files:
             filepath = os.path.join('datas', filename)
