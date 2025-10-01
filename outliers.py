@@ -179,6 +179,14 @@ def clean_column_names(df):
     
     return df_cleaned
 
+def remove_specific_columns(df, filename):
+    if filename == 'keepers.csv':
+        columns_to_remove = ['Penalty Kicks', 'Col_3', 'Col_11', 'Penalty Kicks.3', 'Col_27']
+        existing_columns = [col for col in columns_to_remove if col in df.columns]
+        if existing_columns:
+            df = df.drop(columns=existing_columns)
+    return df
+
 def process_file(filepath, filename):
     try:
         if filename.endswith('.xlsx'):
@@ -190,13 +198,14 @@ def process_file(filepath, filename):
             return df
         
         df = clean_column_names(df)
+        df = remove_specific_columns(df, filename)
         
         is_keeper = filename == 'keepers.csv'
         df = detect_and_clean_duplicates(df, is_keeper)
         
         outliers_info = identify_outliers(df)
         if outliers_info:
-            print(f"Outliers detected in {filename}: {outliers_info}")
+            print(f"✓ {filename} - outliers cleaned")
         
         df = clean_outliers(df)
         df = handle_missing_values(df)
@@ -205,7 +214,7 @@ def process_file(filepath, filename):
         return df
         
     except Exception as e:
-        print(f"Error processing {filename}: {e}")
+        print(f"✗ Error: {filename}")
         return pd.DataFrame()
 
 def main():
