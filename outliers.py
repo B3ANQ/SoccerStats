@@ -187,6 +187,16 @@ def remove_specific_columns(df, filename):
             df = df.drop(columns=existing_columns)
     return df
 
+def remove_goalkeepers(df, filename):
+    if filename != 'keepers.csv':
+        if 'Pos' in df.columns:
+            df = df[df['Pos'] != 'GK']
+        
+        if 'Col_3' in df.columns:
+            df = df[df['Col_3'] != 'GK']
+    
+    return df
+
 def process_file(filepath, filename):
     try:
         if filename.endswith('.xlsx'):
@@ -199,6 +209,7 @@ def process_file(filepath, filename):
         
         df = clean_column_names(df)
         df = remove_specific_columns(df, filename)
+        df = remove_goalkeepers(df, filename)
         
         is_keeper = filename == 'keepers.csv'
         df = detect_and_clean_duplicates(df, is_keeper)
