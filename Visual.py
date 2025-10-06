@@ -148,3 +148,42 @@ fig = px.bar(
     color_continuous_scale="Reds"
 )
 st.plotly_chart(fig, use_container_width=True)
+
+st.title("Analyse des gardiens : Save% vs GA90")
+
+# Charger le CSV (2ème ligne = header)
+df = pd.read_csv("./datas/keepers.csv", header=1)
+
+# Nettoyer Save%
+df['Save%'] = pd.to_numeric(df['Save%'], errors='coerce')
+
+# Supprimer les lignes vides
+df = df.dropna(subset=['Save%', 'GA90'])
+
+# Graphique Altair
+chart = (
+    alt.Chart(df)
+    .mark_circle(size=100)
+    .encode(
+        x=alt.X("Save%:Q", title="Pourcentage de Saves (%)"),
+        y=alt.Y("GA90:Q", title="GA90 (Buts encaissés par 90 min)", scale=alt.Scale(reverse=True)),
+        color=alt.Color("Comp:N", title="Compétition"),
+        tooltip=["Player", "Squad", "Comp", "Save%", "GA90"]
+    )
+    .properties(
+        width=800,
+        height=500,
+        title="Comparaison des gardiens : Save% vs GA90"
+    )
+)
+
+# Ajouter les noms des joueurs
+text = chart.mark_text(align="left", dx=7, dy=-5, fontSize=10).encode(
+    text="Player"
+)
+
+# Combiner
+final_chart = chart + text
+
+# Afficher dans Streamlit
+st.altair_chart(final_chart.interactive(), use_container_width=True)
