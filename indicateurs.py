@@ -36,6 +36,7 @@ st.dataframe(df_indic[['Player', 'Pos', 'passes_reussies', 'passes_progressives_
                        'Interceptions', 'Tackles_Tkl', 'duel_reussite',
                        'efficacité_passes', 'impact_global']].round(2))
 
+
 st.markdown("###  Profil radar d’un joueur")
 joueur = st.selectbox("Choisir un joueur", df_indic['Player'].dropna().sort_values())
 data_joueur = df_indic[df_indic['Player'] == joueur].iloc[0]
@@ -55,22 +56,24 @@ max_vals = [df_indic[col].max() for col in
              'Tackles_Tkl', 'duel_gagné', 'efficacité_passes']]
 values_norm = [v / m * 100 if pd.notna(v) and m != 0 else 0 for v, m in zip(values, max_vals)]
 
-fig, ax = plt.subplots(figsize=(2.5, 2.5), subplot_kw=dict(polar=True))
+fig, ax = plt.subplots(figsize=(1.3, 1.3), subplot_kw=dict(polar=True))
 angles = np.linspace(0, 2 * np.pi, len(labels), endpoint=False).tolist()
 values_norm += values_norm[:1]
 angles += angles[:1]
 
-ax.set_facecolor("#f9f9f9")
+ax.set_facecolor("none")
+ax.grid(color="#cccccc", linestyle="--", linewidth=0.4, alpha=0.6)
 ax.spines["polar"].set_visible(False)
-ax.grid(color="lightgray", linestyle="--", linewidth=0.5)
-ax.plot(angles, values_norm, color='#007acc', linewidth=2)
-ax.fill(angles, values_norm, color='#007acc', alpha=0.2)
+
+ax.plot(angles, values_norm, color="#007acc", linewidth=1.2)
+ax.fill(angles, values_norm, color="#007acc", alpha=0.15)
+
 ax.set_xticks(angles[:-1])
-ax.set_xticklabels(labels, fontsize=7)
+ax.set_xticklabels(labels, fontsize=5.5, color="#333", fontweight="medium")
 ax.set_yticklabels([])
-ax.set_title(f"Profil radar de {joueur}", size=10, pad=8)
+ax.set_ylim(0, 100)
+ax.set_title(f"{joueur}", size=7, pad=3, color="#007acc", fontweight='bold')
 
-
-st.markdown("<div style='text-align: center; max-width: 280px; margin: auto;'>", unsafe_allow_html=True)
-st.pyplot(fig)
+st.markdown("<div style='text-align: center;'>", unsafe_allow_html=True)
+st.pyplot(fig, clear_figure=True)
 st.markdown("</div>", unsafe_allow_html=True)
