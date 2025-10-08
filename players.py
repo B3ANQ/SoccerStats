@@ -470,8 +470,8 @@ def main():
             with col2:
                 st.plotly_chart(
                     create_fifa_style_radar(player_data, selected_player), 
-                    use_container_width=True,
-                    config={'displayModeBar': True, 'displaylogo': False}
+                    config={'displayModeBar': True, 'displaylogo': False},
+                    use_container_width=True
                 )
             
             st.divider()
@@ -600,8 +600,8 @@ def main():
             st.subheader("📈 Interactive Comparison Chart")
             st.plotly_chart(
                 create_comparison_radar(players_data), 
-                use_container_width=True,
-                config={'displayModeBar': True, 'displaylogo': False}
+                config={'displayModeBar': True, 'displaylogo': False},
+                use_container_width=True
             )
             
             st.subheader("📋 Detailed Stats Comparison")
