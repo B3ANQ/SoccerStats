@@ -48,16 +48,25 @@ def get_player_stats(player_name, top5_df, defensive_df, passing_df, keepers_df)
             return player_data
     
     top5_match = top5_df[top5_df['Player'] == player_name]
-    if not top5_match.empty:
-        player_data['general'] = top5_match.iloc[0]
-    
     defensive_match = defensive_df[defensive_df['Player'] == player_name]
-    if not defensive_match.empty:
-        player_data['defensive'] = defensive_match.iloc[0]
-    
     passing_match = passing_df[passing_df['Player'] == player_name]
-    if not passing_match.empty:
-        player_data['passing'] = passing_match.iloc[0]
+    
+    if not top5_match.empty:
+        player_stats = top5_match.iloc[0].to_dict()
+        
+        if not defensive_match.empty:
+            defensive_stats = defensive_match.iloc[0].to_dict()
+            for key, value in defensive_stats.items():
+                if key not in player_stats or pd.isna(player_stats.get(key)):
+                    player_stats[f"def_{key}"] = value
+        
+        if not passing_match.empty:
+            passing_stats = passing_match.iloc[0].to_dict()
+            for key, value in passing_stats.items():
+                if key not in player_stats or pd.isna(player_stats.get(key)):
+                    player_stats[f"pass_{key}"] = value
+        
+        player_data['general'] = pd.Series(player_stats)
     
     return player_data
 
@@ -108,13 +117,20 @@ def create_fifa_style_radar(player_data, player_name):
     if 'general' in player_data:
         info = player_data['general']
         
+        def safe_get(key, default=0, multiplier=1):
+            value = info.get(key, default)
+            try:
+                return float(value) * multiplier if pd.notna(value) else default
+            except (ValueError, TypeError):
+                return default
+        
         stats = {
-            'Pace': min(100, (info.get('PrgR', 0) + info.get('PrgC', 0)) / 2),
-            'Shooting': min(100, info.get('Gls_90', 0) * 50 + info.get('xG_90', 0) * 30),
-            'Passing': min(100, info.get('Ast_90', 0) * 40 + info.get('PrgP', 0) / 2),
-            'Dribbling': min(100, info.get('PrgR', 0) / 2 + info.get('PrgC', 0) / 2),
-            'Defending': min(100, (info.get('CrdY', 0) + info.get('CrdR', 0)) / 2),
-            'Physical': min(100, info.get('Min', 0) / 50)
+            'Pace': min(100, (safe_get('PrgR', 0, 2) + safe_get('PrgC', 0, 2)) / 2),
+            'Shooting': min(100, safe_get('Gls_90', 0, 20) + safe_get('xG_90', 0, 15) + safe_get('G+A_90', 0, 10)),
+            'Passing': min(100, (safe_get('Ast_90', 0, 25) + safe_get('pass_Cmp%', 0, 0.8) + safe_get('pass_xA', 0, 15)) / 2),
+            'Dribbling': min(100, safe_get('PrgR', 0, 3) + safe_get('PrgC', 0, 2) + safe_get('pass_KP', 0, 2)),
+            'Defending': min(100, (safe_get('def_Tkl', 0, 2) + safe_get('def_Int', 0, 2) + safe_get('def_Blocks', 0, 3)) / 2),
+            'Physical': min(100, (safe_get('Min', 0, 0.03) + safe_get('90s', 0, 5) + (10 - safe_get('CrdY', 0))) / 2)
         }
         
         categories = list(stats.keys())
@@ -202,14 +218,27 @@ def create_comparison_radar(players_data):
     for i, (player_name, data) in enumerate(players_data.items()):
         if 'general' in data:
             info = data['general']
+            
+            def safe_get_comp(key, default=0):
+                value = info.get(key, default)
+                try:
+                    return float(value) if pd.notna(value) else default
+                except (ValueError, TypeError):
+                    return default
+            
             stats = {
-                'Goals/90': round(info.get('Gls_90', 0), 2),
-                'Assists/90': round(info.get('Ast_90', 0), 2),
-                'xG/90': round(info.get('xG_90', 0), 2),
-                'xA/90': round(info.get('xAG_90', 0), 2),
-                'Progressive': round(info.get('PrgC', 0) / 10, 2),
-                'Cards': round((info.get('CrdY', 0) + info.get('CrdR', 0) * 2) / 10, 2)
+                'Goals/90': round(safe_get_comp('Gls_90', 0), 2),
+                'Assists/90': round(safe_get_comp('Ast_90', 0), 2),
+                'xG/90': round(safe_get_comp('xG_90', 0), 2),
+                'xA/90': round(safe_get_comp('xAG_90', 0), 2),
+                'Progressive Actions': round((safe_get_comp('PrgC', 0) + safe_get_comp('PrgP', 0)) / 20, 2),
+                'Tackles': round(safe_get_comp('def_Tkl', 0) / 5, 2),
+                'Interceptions': round(safe_get_comp('def_Int', 0) / 5, 2),
+                'Pass Completion%': round(safe_get_comp('pass_Cmp%', 0) / 10, 2),
+                'Key Passes': round(safe_get_comp('pass_KP', 0) / 5, 2),
+                'Blocks': round(safe_get_comp('def_Blocks', 0) / 3, 2)
             }
+            
         elif 'goalkeeper' in data:
             info = data['goalkeeper']
             
@@ -322,7 +351,7 @@ def main():
         selected_position = st.selectbox("⚽ Position", positions, index=0)
     
     with col3:
-        nations = ["all"] + sorted(all_players_df['Nation'].dropna().unique().tolist())
+        nations = ["all"] + sorted([nation for nation in all_players_df['Nation'].dropna().unique().tolist() if nation not in ['Nation', 'Unknown']])
         selected_nation = st.selectbox("🌍 Nationality", nations, index=0)
     
     filtered_df = all_players_df.copy()
@@ -360,27 +389,51 @@ def main():
             if 'general' in player_data:
                 info = player_data['general']
                 
+                def safe_display_get(key, default=0):
+                    value = info.get(key, default)
+                    try:
+                        return float(value) if pd.notna(value) else default
+                    except (ValueError, TypeError):
+                        return default
+                
                 st.subheader("⚡ Performance Statistics")
-                col1, col2 = st.columns(2)
+                col1, col2, col3 = st.columns(3)
                 
                 with col1:
                     st.write("**Offensive Stats**")
                     perf_data = {
-                        'Goals per 90': info.get('Gls_90', 0),
-                        'Assists per 90': info.get('Ast_90', 0),
-                        'xG per 90': info.get('xG_90', 0),
-                        'xA per 90': info.get('xAG_90', 0)
+                        'Goals per 90': safe_display_get('Gls_90'),
+                        'Assists per 90': safe_display_get('Ast_90'),
+                        'xG per 90': safe_display_get('xG_90'),
+                        'xA per 90': safe_display_get('xAG_90'),
+                        'Key Passes': safe_display_get('pass_KP'),
+                        'Goal+Assist per 90': safe_display_get('G+A_90')
                     }
                     st.bar_chart(perf_data)
                 
                 with col2:
-                    st.write("**Progressive Play**")
-                    add_data = {
-                        'Progressive Carries': info.get('PrgC', 0),
-                        'Progressive Passes': info.get('PrgP', 0),
-                        'Progressive Runs': info.get('PrgR', 0)
+                    st.write("**Defensive Stats**")
+                    def_data = {
+                        'Tackles': safe_display_get('def_Tkl'),
+                        'Tackles Won': safe_display_get('def_TklW'),
+                        'Interceptions': safe_display_get('def_Int'),
+                        'Blocks': safe_display_get('def_Blocks'),
+                        'Clearances': safe_display_get('def_Clr'),
+                        'Errors': safe_display_get('def_Err')
                     }
-                    st.bar_chart(add_data)
+                    st.bar_chart(def_data)
+                
+                with col3:
+                    st.write("**Passing Stats**")
+                    pass_data = {
+                        'Pass Completion %': safe_display_get('pass_Cmp%'),
+                        'Progressive Passes': safe_display_get('pass_PrgP'),
+                        'Pass Distance': safe_display_get('pass_TotDist') / 100,
+                        'Long Passes Completed': safe_display_get('pass_Long'),
+                        'Crosses to Penalty Area': safe_display_get('pass_CrsPA'),
+                        'Expected Assists': safe_display_get('pass_xA')
+                    }
+                    st.bar_chart(pass_data)
             
             elif 'goalkeeper' in player_data:
                 info = player_data['goalkeeper']
@@ -465,17 +518,31 @@ def main():
                 if player in players_data:
                     if 'general' in players_data[player]:
                         info = players_data[player]['general']
+                        
+                        def safe_table_get(key, default=0, round_digits=3):
+                            value = info.get(key, default)
+                            try:
+                                val = float(value) if pd.notna(value) else default
+                                return round(val, round_digits) if round_digits > 0 else int(val)
+                            except (ValueError, TypeError):
+                                return default
+                        
                         comparison_data.append({
                             'Player': player,
                             'Age': info.get('Age', 'N/A'),
                             'Position': info.get('Pos', 'N/A'),
                             'Squad': info.get('Squad', 'N/A'),
                             'League': info.get('Comp', 'N/A'),
-                            'Goals/90': round(info.get('Gls_90', 0), 3),
-                            'Assists/90': round(info.get('Ast_90', 0), 3),
-                            'xG/90': round(info.get('xG_90', 0), 3),
-                            'xA/90': round(info.get('xAG_90', 0), 3),
-                            'Minutes': info.get('Min', 0)
+                            'Goals/90': safe_table_get('Gls_90'),
+                            'Assists/90': safe_table_get('Ast_90'),
+                            'xG/90': safe_table_get('xG_90'),
+                            'xA/90': safe_table_get('xAG_90'),
+                            'Tackles': safe_table_get('def_Tkl', 0, 0),
+                            'Interceptions': safe_table_get('def_Int', 0, 0),
+                            'Pass%': safe_table_get('pass_Cmp%', 0, 1),
+                            'Key Passes': safe_table_get('pass_KP', 0, 0),
+                            'Progressive': safe_table_get('PrgC', 0, 0),
+                            'Minutes': safe_table_get('Min', 0, 0)
                         })
                     elif 'goalkeeper' in players_data[player]:
                         info = players_data[player]['goalkeeper']
@@ -514,6 +581,13 @@ def main():
                         "League": st.column_config.TextColumn("🏆 League", width="medium"),
                         "Goals/90": st.column_config.NumberColumn("⚽ Goals/90", format="%.3f"),
                         "Assists/90": st.column_config.NumberColumn("🎯 Assists/90", format="%.3f"),
+                        "xG/90": st.column_config.NumberColumn("🎲 xG/90", format="%.3f"),
+                        "xA/90": st.column_config.NumberColumn("🎪 xA/90", format="%.3f"),
+                        "Tackles": st.column_config.NumberColumn("🛡️ Tackles", format="%d"),
+                        "Interceptions": st.column_config.NumberColumn("🔄 Int", format="%d"),
+                        "Pass%": st.column_config.NumberColumn("📊 Pass%", format="%.1f%%"),
+                        "Key Passes": st.column_config.NumberColumn("🔑 KP", format="%d"),
+                        "Progressive": st.column_config.NumberColumn("⚡ Prog", format="%d"),
                         "Save%": st.column_config.NumberColumn("🧤 Save%", format="%.1f%%"),
                         "Minutes": st.column_config.NumberColumn("⏱️ Minutes", format="%d")
                     }
