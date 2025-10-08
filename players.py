@@ -470,7 +470,7 @@ def main():
             with col2:
                 st.plotly_chart(
                     create_fifa_style_radar(player_data, selected_player), 
-                    width='stretch',
+                    use_container_width=True,
                     config={'displayModeBar': True, 'displaylogo': False}
                 )
             
@@ -600,7 +600,7 @@ def main():
             st.subheader("📈 Interactive Comparison Chart")
             st.plotly_chart(
                 create_comparison_radar(players_data), 
-                width='stretch',
+                use_container_width=True,
                 config={'displayModeBar': True, 'displaylogo': False}
             )
             
@@ -672,7 +672,7 @@ def main():
                 comparison_df = pd.DataFrame(comparison_data)
                 st.dataframe(
                     comparison_df, 
-                    width='stretch',
+                    use_container_width=True,
                     column_config={
                         "Player": st.column_config.TextColumn("👤 Player", width="medium"),
                         "Squad": st.column_config.TextColumn("🏟️ Club", width="medium"),
