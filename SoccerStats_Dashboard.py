@@ -137,30 +137,21 @@ elif page == "📊 Analyse Générale":
         if 'Pos' in df.columns:
             st.subheader("Répartition par Poste")
             pos_counts = df['Pos'].value_counts()
-            
-            col1, col2 = st.columns(2)
-            
-            with col1:
-                fig = px.bar(x=pos_counts.values, y=pos_counts.index, orientation='h',
-                            title="Nombre de joueurs par poste",
-                            color=pos_counts.values,
-                            color_continuous_scale='viridis')
-                fig.update_xaxis(title="Nombre de joueurs")
-                fig.update_yaxis(title="Poste")
-                fig.update_layout(height=400)
-                st.plotly_chart(fig, use_container_width=True)
-            
-            with col2:
-                fig_pie = px.pie(values=pos_counts.values, names=pos_counts.index,
-                               title="Répartition en pourcentage par poste")
-                fig_pie.update_layout(height=400)
-                st.plotly_chart(fig_pie, use_container_width=True)
+            fig = px.bar(x=pos_counts.index, y=pos_counts.values,
+                        title="Nombre de joueurs par poste")
+            fig.update_xaxis(title="Poste")
+            fig.update_yaxis(title="Nombre de joueurs")
+            st.plotly_chart(fig, use_container_width=True)
 
 elif page == "⚽ Joueurs de Champ":
     st.header("Analyse des Joueurs de Champ")
     
     if 'players' in data:
-        df = data['players']
+        df = data['players'].copy()
+        cols_to_numeric = ["Gls", "Ast", "xG", "xAG", "Goals_per_90", "Assists_per_90"]
+        for col in cols_to_numeric:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
         
         st.sidebar.subheader("Filtres")
         
@@ -210,32 +201,11 @@ elif page == "⚽ Joueurs de Champ":
             if 'Gls' in df.columns:
                 st.subheader("🥅 Top 15 Buteurs")
                 top_scorers = df.nlargest(15, 'Gls')[['Player', 'Gls', 'Squad']]
-                if len(top_scorers) > 0 and top_scorers['Gls'].max() > 0:
-                    fig = px.bar(top_scorers, x='Gls', y='Player', orientation='h',
-                               hover_data=['Squad'], 
-                               color='Gls',
-                               color_continuous_scale='Reds',
-                               title="🥅 Classement des meilleurs buteurs")
-                    fig.update_layout(
-                        height=600,
-                        yaxis={'categoryorder':'total ascending'},
-                        xaxis_title="Nombre de buts",
-                        yaxis_title="Joueurs",
-                        showlegend=False,
-                        plot_bgcolor='rgba(0,0,0,0)',
-                        paper_bgcolor='rgba(0,0,0,0)'
-                    )
-                    fig.update_traces(
-                        texttemplate='%{x}', 
-                        textposition='outside',
-                        textfont_size=12,
-                        textfont_color='black'
-                    )
-                    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='lightgray')
-                    fig.update_yaxes(showgrid=False)
-                    st.plotly_chart(fig, use_container_width=True)
-                else:
-                    st.warning("Aucune donnée de buts disponible avec les filtres actuels")
+                fig = px.bar(top_scorers, x='Gls', y='Player', orientation='h',
+                           hover_data=['Squad'], color='Gls',
+                           color_continuous_scale='Reds')
+                fig.update_layout(height=600)
+                st.plotly_chart(fig, use_container_width=True)
         
         with col2:
             if 'Ast' in df.columns:

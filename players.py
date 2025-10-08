@@ -12,6 +12,21 @@ def load_data():
     defensive = pd.read_csv('datas_cleaned/Defensive.csv')
     passing = pd.read_csv('datas_cleaned/Passing.csv')
     keepers = pd.read_csv('datas_cleaned/keepers.csv')
+    players_positions = pd.read_csv('datas_cleaned/players_positions.csv')
+    premier_league_positions = pd.read_csv('datas_cleaned/premier_league_players_positions.csv')
+    bundesliga_positions = pd.read_csv('datas_cleaned/bundesliga_players_positions.csv')
+    liga_positions = pd.read_csv('datas_cleaned/liga_players_positions.csv')
+    ligue_1_positions = pd.read_csv('datas_cleaned/ligue_1_players_positions.csv')
+    serie_a_positions = pd.read_csv('datas_cleaned/serie_a_players_positions.csv')
+    
+    all_positions = pd.concat([
+        players_positions,
+        premier_league_positions,
+        bundesliga_positions,
+        liga_positions,
+        ligue_1_positions,
+        serie_a_positions
+    ], ignore_index=True).drop_duplicates(subset=['Name'])
     
     defensive = defensive.rename(columns={'Col_1': 'Player'})
     passing = passing.rename(columns={'Col_1': 'Player'})
@@ -36,9 +51,9 @@ def load_data():
         'Playing Time.1': 'Starts'
     })
     
-    return top5_players, defensive, passing, keepers
+    return top5_players, defensive, passing, keepers, all_positions
 
-def get_player_stats(player_name, top5_df, defensive_df, passing_df, keepers_df):
+def get_player_stats(player_name, top5_df, defensive_df, passing_df, keepers_df, positions_df):
     player_data = {}
     
     if 'Player' in keepers_df.columns:
@@ -50,9 +65,13 @@ def get_player_stats(player_name, top5_df, defensive_df, passing_df, keepers_df)
     top5_match = top5_df[top5_df['Player'] == player_name]
     defensive_match = defensive_df[defensive_df['Player'] == player_name]
     passing_match = passing_df[passing_df['Player'] == player_name]
+    position_match = positions_df[positions_df['Name'] == player_name]
     
     if not top5_match.empty:
         player_stats = top5_match.iloc[0].to_dict()
+        
+        if not position_match.empty:
+            player_stats['Detailed_Position'] = position_match.iloc[0]['Position']
         
         if not defensive_match.empty:
             defensive_stats = defensive_match.iloc[0].to_dict()
@@ -80,7 +99,12 @@ def display_player_info(player_data):
             st.metric("Nation", info.get('Nation', 'N/A'))
         
         with col2:
-            st.metric("Position", info.get('Pos', 'N/A'))
+            detailed_pos = info.get('Detailed_Position', info.get('Pos', 'N/A'))
+            base_pos = info.get('Pos', 'N/A')
+            if detailed_pos != base_pos and pd.notna(detailed_pos):
+                st.metric("Position", f"{detailed_pos} ({base_pos})")
+            else:
+                st.metric("Position", base_pos)
             st.metric("Squad", info.get('Squad', 'N/A'))
         
         with col3:
@@ -116,6 +140,7 @@ def create_fifa_style_radar(player_data, player_name):
     
     if 'general' in player_data:
         info = player_data['general']
+        position = info.get('Detailed_Position', info.get('Pos', 'Unknown'))
         
         def safe_get(key, default=0, multiplier=1):
             value = info.get(key, default)
@@ -124,14 +149,42 @@ def create_fifa_style_radar(player_data, player_name):
             except (ValueError, TypeError):
                 return default
         
-        stats = {
-            'Pace': min(100, (safe_get('PrgR', 0, 2) + safe_get('PrgC', 0, 2)) / 2),
-            'Shooting': min(100, safe_get('Gls_90', 0, 20) + safe_get('xG_90', 0, 15) + safe_get('G+A_90', 0, 10)),
-            'Passing': min(100, (safe_get('Ast_90', 0, 25) + safe_get('pass_Cmp%', 0, 0.8) + safe_get('pass_xA', 0, 15)) / 2),
-            'Dribbling': min(100, safe_get('PrgR', 0, 3) + safe_get('PrgC', 0, 2) + safe_get('pass_KP', 0, 2)),
-            'Defending': min(100, (safe_get('def_Tkl', 0, 2) + safe_get('def_Int', 0, 2) + safe_get('def_Blocks', 0, 3)) / 2),
-            'Physical': min(100, (safe_get('Min', 0, 0.03) + safe_get('90s', 0, 5) + (10 - safe_get('CrdY', 0))) / 2)
-        }
+        if position in ['BU', 'AG', 'AD', 'MOG', 'MOD']:
+            stats = {
+                'Pace': min(100, (safe_get('PrgR', 0, 3) + safe_get('PrgC', 0, 2)) / 2),
+                'Shooting': min(100, safe_get('Gls_90', 0, 25) + safe_get('xG_90', 0, 20) + safe_get('G+A_90', 0, 15)),
+                'Passing': min(100, (safe_get('Ast_90', 0, 30) + safe_get('pass_Cmp%', 0, 0.6) + safe_get('pass_xA', 0, 20)) / 2),
+                'Dribbling': min(100, safe_get('PrgR', 0, 4) + safe_get('PrgC', 0, 3) + safe_get('pass_KP', 0, 3)),
+                'Defending': min(100, (safe_get('def_Tkl', 0, 1) + safe_get('def_Int', 0, 1)) / 2),
+                'Physical': min(100, (safe_get('Min', 0, 0.04) + safe_get('90s', 0, 6) + (12 - safe_get('CrdY', 0))) / 3)
+            }
+        elif position in ['MDC', 'MC', 'MOC', 'MG', 'MD']:
+            stats = {
+                'Pace': min(100, (safe_get('PrgR', 0, 2) + safe_get('PrgC', 0, 2.5)) / 2),
+                'Shooting': min(100, safe_get('Gls_90', 0, 20) + safe_get('xG_90', 0, 15) + safe_get('G+A_90', 0, 10)),
+                'Passing': min(100, (safe_get('Ast_90', 0, 25) + safe_get('pass_Cmp%', 0, 0.9) + safe_get('pass_xA', 0, 15) + safe_get('pass_PrgP', 0, 1)) / 3),
+                'Dribbling': min(100, safe_get('PrgR', 0, 3) + safe_get('PrgC', 0, 2) + safe_get('pass_KP', 0, 2)),
+                'Defending': min(100, (safe_get('def_Tkl', 0, 2.5) + safe_get('def_Int', 0, 2.5) + safe_get('def_Blocks', 0, 4)) / 2),
+                'Physical': min(100, (safe_get('Min', 0, 0.03) + safe_get('90s', 0, 5) + (10 - safe_get('CrdY', 0))) / 2)
+            }
+        elif position in ['DG', 'DD', 'DC', 'DL', 'DR']:
+            stats = {
+                'Pace': min(100, (safe_get('PrgR', 0, 1.5) + safe_get('PrgC', 0, 2)) / 2),
+                'Shooting': min(100, safe_get('Gls_90', 0, 15) + safe_get('xG_90', 0, 10)),
+                'Passing': min(100, (safe_get('Ast_90', 0, 20) + safe_get('pass_Cmp%', 0, 1) + safe_get('pass_PrgP', 0, 1.5)) / 2),
+                'Dribbling': min(100, safe_get('PrgR', 0, 2) + safe_get('PrgC', 0, 1.5)),
+                'Defending': min(100, (safe_get('def_Tkl', 0, 3) + safe_get('def_Int', 0, 3) + safe_get('def_Blocks', 0, 4) + safe_get('def_Clr', 0, 1)) / 3),
+                'Physical': min(100, (safe_get('Min', 0, 0.03) + safe_get('90s', 0, 5) + (12 - safe_get('CrdY', 0))) / 2)
+            }
+        else:
+            stats = {
+                'Pace': min(100, (safe_get('PrgR', 0, 2) + safe_get('PrgC', 0, 2)) / 2),
+                'Shooting': min(100, safe_get('Gls_90', 0, 20) + safe_get('xG_90', 0, 15) + safe_get('G+A_90', 0, 10)),
+                'Passing': min(100, (safe_get('Ast_90', 0, 25) + safe_get('pass_Cmp%', 0, 0.8) + safe_get('pass_xA', 0, 15)) / 2),
+                'Dribbling': min(100, safe_get('PrgR', 0, 3) + safe_get('PrgC', 0, 2) + safe_get('pass_KP', 0, 2)),
+                'Defending': min(100, (safe_get('def_Tkl', 0, 2) + safe_get('def_Int', 0, 2) + safe_get('def_Blocks', 0, 3)) / 2),
+                'Physical': min(100, (safe_get('Min', 0, 0.03) + safe_get('90s', 0, 5) + (10 - safe_get('CrdY', 0))) / 2)
+            }
         
         categories = list(stats.keys())
         values = list(stats.values())
@@ -327,18 +380,51 @@ def create_comparison_radar(players_data):
 def main():
     st.title("⚽ Soccer Stats Players Dashboard")
     
-    top5_df, defensive_df, passing_df, keepers_df = load_data()
+    top5_df, defensive_df, passing_df, keepers_df, positions_df = load_data()
     
     all_players_df = top5_df[['Player', 'Nation', 'Pos', 'Squad', 'Comp']].copy()
+    
+    all_players_df = all_players_df.merge(
+        positions_df.rename(columns={'Name': 'Player', 'Position': 'Detailed_Position'}),
+        on='Player', 
+        how='left'
+    )
     
     if 'Player' in keepers_df.columns:
         keepers_for_filter = keepers_df[['Player', 'Nation', 'Squad', 'Comp']].copy()
         keepers_for_filter['Pos'] = 'GK'
+        keepers_for_filter['Detailed_Position'] = 'GK'
         all_players_df = pd.concat([all_players_df, keepers_for_filter], ignore_index=True)
     
     all_players_df = all_players_df.drop_duplicates(subset=['Player'])
     
-    st.header("🔍 Filters")
+    st.header("🔍 Advanced Filters")
+    
+    with st.expander("ℹ️ Position Guide"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            st.write("**🎯 Attackers**")
+            st.write("- **BU**: Buteur (Striker)")
+            st.write("- **AG**: Ailier Gauche")
+            st.write("- **AD**: Ailier Droit")
+            st.write("- **MOG**: Milieu Offensif Gauche")
+            st.write("- **MOD**: Milieu Offensif Droit")
+        
+        with col2:
+            st.write("**⚡ Midfielders**")
+            st.write("- **MDC**: Milieu Défensif Central")
+            st.write("- **MC**: Milieu Central")
+            st.write("- **MOC**: Milieu Offensif Central")
+            st.write("- **MG**: Milieu Gauche")
+            st.write("- **MD**: Milieu Droit")
+        
+        with col3:
+            st.write("**🛡️ Defenders**")
+            st.write("- **DG**: Défenseur Gauche")
+            st.write("- **DD**: Défenseur Droit")
+            st.write("- **DC**: Défenseur Central")
+            st.write("- **DL**: Défenseur Latéral")
+            st.write("- **DR**: Défenseur Relanceur")
     
     col1, col2, col3 = st.columns(3)
     
@@ -347,8 +433,8 @@ def main():
         selected_league = st.selectbox("🏆 League", leagues, index=0)
     
     with col2:
-        positions = ["all"] + sorted(all_players_df['Pos'].dropna().unique().tolist())
-        selected_position = st.selectbox("⚽ Position", positions, index=0)
+        detailed_positions = ["all"] + sorted([pos for pos in all_players_df['Detailed_Position'].dropna().unique().tolist() if pos not in ['Position', 'Unknown']])
+        selected_detailed_position = st.selectbox("🎯 Detailed Position", detailed_positions, index=0)
     
     with col3:
         nations = ["all"] + sorted([nation for nation in all_players_df['Nation'].dropna().unique().tolist() if nation not in ['Nation', 'Unknown']])
@@ -359,8 +445,8 @@ def main():
     if selected_league != "all":
         filtered_df = filtered_df[filtered_df['Comp'] == selected_league]
     
-    if selected_position != "all":
-        filtered_df = filtered_df[filtered_df['Pos'] == selected_position]
+    if selected_detailed_position != "all":
+        filtered_df = filtered_df[filtered_df['Detailed_Position'] == selected_detailed_position]
     
     if selected_nation != "all":
         filtered_df = filtered_df[filtered_df['Nation'] == selected_nation]
@@ -372,7 +458,7 @@ def main():
         selected_player = st.selectbox("Select a player to analyze", [""] + player_names)
         
         if selected_player:
-            player_data = get_player_stats(selected_player, top5_df, defensive_df, passing_df, keepers_df)
+            player_data = get_player_stats(selected_player, top5_df, defensive_df, passing_df, keepers_df, positions_df)
             
             st.header(f"📊 {selected_player} - Player Analysis")
             
@@ -382,7 +468,11 @@ def main():
                 display_player_info(player_data)
             
             with col2:
-                st.plotly_chart(create_fifa_style_radar(player_data, selected_player), use_container_width=True)
+                st.plotly_chart(
+                    create_fifa_style_radar(player_data, selected_player), 
+                    width='stretch',
+                    config={'displayModeBar': True, 'displaylogo': False}
+                )
             
             st.divider()
             
@@ -505,10 +595,14 @@ def main():
         if len(comparison_players) > 1:
             players_data = {}
             for player in comparison_players:
-                players_data[player] = get_player_stats(player, top5_df, defensive_df, passing_df, keepers_df)
+                players_data[player] = get_player_stats(player, top5_df, defensive_df, passing_df, keepers_df, positions_df)
             
             st.subheader("📈 Interactive Comparison Chart")
-            st.plotly_chart(create_comparison_radar(players_data), use_container_width=True)
+            st.plotly_chart(
+                create_comparison_radar(players_data), 
+                width='stretch',
+                config={'displayModeBar': True, 'displaylogo': False}
+            )
             
             st.subheader("📋 Detailed Stats Comparison")
             
@@ -527,10 +621,14 @@ def main():
                             except (ValueError, TypeError):
                                 return default
                         
+                        detailed_pos = info.get('Detailed_Position', info.get('Pos', 'N/A'))
+                        base_pos = info.get('Pos', 'N/A')
+                        position_display = f"{detailed_pos}" if pd.notna(detailed_pos) and detailed_pos != 'N/A' else base_pos
+                        
                         comparison_data.append({
                             'Player': player,
                             'Age': info.get('Age', 'N/A'),
-                            'Position': info.get('Pos', 'N/A'),
+                            'Position': position_display,
                             'Squad': info.get('Squad', 'N/A'),
                             'League': info.get('Comp', 'N/A'),
                             'Goals/90': safe_table_get('Gls_90'),
@@ -574,7 +672,7 @@ def main():
                 comparison_df = pd.DataFrame(comparison_data)
                 st.dataframe(
                     comparison_df, 
-                    use_container_width=True,
+                    width='stretch',
                     column_config={
                         "Player": st.column_config.TextColumn("👤 Player", width="medium"),
                         "Squad": st.column_config.TextColumn("🏟️ Club", width="medium"),
@@ -603,6 +701,22 @@ def main():
         st.metric("Goalkeepers", len(keepers_df))
         st.metric("Leagues", len(all_players_df['Comp'].unique()))
         st.metric("Teams", len(all_players_df['Squad'].unique()))
+        
+        st.divider()
+        st.subheader("🎯 Position Breakdown")
+        
+        if 'Detailed_Position' in all_players_df.columns:
+            detailed_pos_counts = all_players_df['Detailed_Position'].value_counts().head(8)
+            for pos, count in detailed_pos_counts.items():
+                if pd.notna(pos) and pos != 'Unknown':
+                    st.metric(f"{pos}", count)
+        
+        st.divider()
+        st.subheader("🏆 League Distribution")
+        league_counts = all_players_df['Comp'].value_counts()
+        for league, count in league_counts.items():
+            if pd.notna(league) and league != 'Comp':
+                st.metric(f"{league}", count)
 
 if __name__ == "__main__":
     main()
