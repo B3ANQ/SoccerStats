@@ -52,7 +52,6 @@ def load_data():
         'keepers': 'keepers.csv',
         'defensive': 'Defensive.csv',
         'passing': 'Passing.csv',
-        'all_stats': 'All_Stats_Field_Player.csv'
     }
     
     for key, filename in files.items():
@@ -141,15 +140,19 @@ elif page == "📊 Analyse Générale":
             pos_counts = df['Pos'].value_counts()
             fig = px.bar(x=pos_counts.index, y=pos_counts.values,
                         title="Nombre de joueurs par poste")
-            fig.update_xaxis(title="Poste")
-            fig.update_yaxis(title="Nombre de joueurs")
+            fig.update_xaxes(title="Poste")
+            fig.update_yaxes(title="Nombre de joueurs")
             st.plotly_chart(fig, use_container_width=True)
 
 elif page == "⚽ Joueurs de Champ":
     st.header("Analyse des Joueurs de Champ")
     
     if 'players' in data:
-        df = data['players']
+        df = data['players'].copy()
+        cols_to_numeric = ["Gls", "Ast", "xG", "xAG", "Goals_per_90", "Assists_per_90"]
+        for col in cols_to_numeric:
+            if col in df.columns:
+                df[col] = pd.to_numeric(df[col], errors="coerce")
         
         st.sidebar.subheader("Filtres")
         
@@ -176,13 +179,26 @@ elif page == "⚽ Joueurs de Champ":
         
         with col1:
             if 'Gls' in df.columns:
-                st.subheader("🥅 Top 15 Buteurs")
-                top_scorers = df.nlargest(15, 'Gls')[['Player', 'Gls', 'Squad']]
-                fig = px.bar(top_scorers, x='Gls', y='Player', orientation='h',
-                           hover_data=['Squad'], color='Gls',
-                           color_continuous_scale='Reds')
-                fig.update_layout(height=600)
-                st.plotly_chart(fig, use_container_width=True)
+                if {'Player', 'Squad', 'Comp'}.issubset(df.columns):
+                    df['DisplayName'] = df['Player'] + " – " + df['Squad'] + " (" + df['Comp'] + ")"
+                else:
+                    df['DisplayName'] = df['Player']
+                
+                top_scorers = df.nlargest(15, "Gls")[["DisplayName", "Gls"]].sort_values("Gls", ascending=True)
+
+                # Graphique
+                fig, ax = plt.subplots(figsize=(10, 6))
+                sns.barplot(
+                    x="Gls", 
+                    y="DisplayName", 
+                    data=top_scorers, 
+                    palette="coolwarm", 
+                    ax=ax
+                )
+                ax.set_title("Top 15 joueurs par buts marqués", fontsize=14, fontweight='bold')
+                ax.set_xlabel("Buts", fontsize=12)
+                ax.set_ylabel("")
+                st.pyplot(fig)
         
         with col2:
             if 'Ast' in df.columns:

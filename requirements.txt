@@ -7,3 +7,4 @@ streamlit
 scipy
 openpyxl
 plotly
+kagglehub
