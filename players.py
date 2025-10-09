@@ -6,6 +6,160 @@ import plotly.express as px
 
 st.set_page_config(page_title="Soccer Stats Players", layout="wide")
 
+def get_club_logo(club_name):
+    """Retourne le chemin vers le logo du club."""
+    import os
+    
+    club_mapping = {
+        # Premier League
+        "Arsenal": "premier_league/Arsenal.png",
+        "Chelsea": "premier_league/Chelsea.png",
+        "Liverpool": "premier_league/Liverpool.png",
+        "Manchester City": "premier_league/Man City.png",
+        "Manchester United": "premier_league/Man United.png",
+        "Tottenham": "premier_league/Tottenham.png",
+        "Newcastle": "premier_league/Newcastle.png",
+        "Brighton": "premier_league/Brighton.png",
+        "West Ham": "premier_league/West Ham.png",
+        "Aston Villa": "premier_league/Aston Villa.png",
+        "Fulham": "premier_league/Fulham.png",
+        "Brentford": "premier_league/Brentford.png",
+        "Crystal Palace": "premier_league/Crystal Palace.png",
+        "Bournemouth": "premier_league/Bournemouth.png",
+        "Wolves": "premier_league/Wolverhampton.png",
+        "Everton": "premier_league/Everton.png",
+        "Nottingham Forest": "premier_league/Nottingham.png",
+        "Sheffield United": "premier_league/Sheff Utd.png",
+        "Burnley": "premier_league/Burnley.png",
+        "Luton Town": "premier_league/Luton.png",
+        
+        # La Liga
+        "Real Madrid": "liga/Real Madrid.png",
+        "Barcelona": "liga/Barcelone.png",
+        "Atlético Madrid": "liga/Atlético.png",
+        "Athletic Club": "liga/Bilbao.png",
+        "Real Sociedad": "liga/Real Sociedad.png",
+        "Betis": "liga/Betis.png",
+        "Villarreal": "liga/Villarreal.png",
+        "Valencia": "liga/Valence.png",
+        "Sevilla": "liga/Séville.png",
+        "Girona": "liga/Girona.png",
+        "Las Palmas": "liga/Las Palmas.png",
+        "Getafe": "liga/Getafe.png",
+        "Osasuna": "liga/Osasuna.png",
+        "Celta Vigo": "liga/Celta Vigo.png",
+        "Rayo Vallecano": "liga/Vallecano.png",
+        "Cádiz": "liga/Cadix.png",
+        "Mallorca": "liga/Majorque.png",
+        "Almería": "liga/Almería.png",
+        "Granada": "liga/Grenade.png",
+        "Alavés": "liga/Alavés.png",
+        
+        # Bundesliga
+        "Bayern Munich": "bundesliga/Bayern Munich.png",
+        "Dortmund": "bundesliga/Dortmund.png",
+        "RB Leipzig": "bundesliga/Leipzig.png",
+        "Bayer Leverkusen": "bundesliga/Leverkusen.png",
+        "Eintracht Frankfurt": "bundesliga/Francfort.png",
+        "VfB Stuttgart": "bundesliga/Stuttgart.png",
+        "Freiburg": "bundesliga/Fribourg.png",
+        "Union Berlin": "bundesliga/Union Berlin.png",
+        "Werder Bremen": "bundesliga/Brême.png",
+        "Borussia Mönchengladbach": "bundesliga/M_gladbach.png",
+        "VfL Wolfsburg": "bundesliga/Wolfsbourg.png",
+        "Mainz 05": "bundesliga/Mayence.png",
+        "FC Köln": "bundesliga/Cologne.png",
+        "Hoffenheim": "bundesliga/Hoffenheim.png",
+        "FC Augsburg": "bundesliga/Augsbourg.png",
+        "VfL Bochum": "bundesliga/Bochum.png",
+        "Heidenheim": "bundesliga/Heidenheim.png",
+        "Darmstadt": "bundesliga/Darmstadt.png",
+        
+        # Serie A
+        "Juventus": "serie_a/Juventus.png",
+        "Inter": "serie_a/Inter Milan.png",
+        "AC Milan": "serie_a/Milan.png",
+        "Napoli": "serie_a/Naples.png",
+        "Roma": "serie_a/Rome.png",
+        "Lazio": "serie_a/Lazio.png",
+        "Atalanta": "serie_a/Atalanta.png",
+        "Fiorentina": "serie_a/Fiorentina.png",
+        "Torino": "serie_a/Torino.png",
+        "Bologna": "serie_a/Bologne.png",
+        "Sassuolo": "serie_a/Sassuolo.png",
+        "Monza": "serie_a/Monza.png",
+        "Udinese": "serie_a/Udinese.png",
+        "Genoa": "serie_a/Genoa.png",
+        "Lecce": "serie_a/Lecce.png",
+        "Empoli": "serie_a/Empoli.png",
+        "Cagliari": "serie_a/Cagliari.png",
+        "Hellas Verona": "serie_a/Hellas.png",
+        "Salernitana": "serie_a/Salernitana.png",
+        "Frosinone": "serie_a/Frosinone.png",
+        
+        # Ligue 1
+        "Paris S-G": "ligue_1/PSG.png",
+        "Marseille": "ligue_1/Marseille.png",
+        "Monaco": "ligue_1/Monaco.png",
+        "Lyon": "ligue_1/Lyon.png",
+        "Lille": "ligue_1/Lille.png",
+        "Nice": "ligue_1/Nice.png",
+        "Rennes": "ligue_1/Rennes.png",
+        "Lens": "ligue_1/Lens.png",
+        "Nantes": "ligue_1/Nantes.png",
+        "Strasbourg": "ligue_1/Strasbourg.png",
+        "Montpellier": "ligue_1/Montpellier.png",
+        "Reims": "ligue_1/Reims.png",
+        "Toulouse": "ligue_1/Toulouse.png",
+        "Brest": "ligue_1/Brest.png",
+        "Le Havre": "ligue_1/Le Havre.png",
+        "Lorient": "ligue_1/Lorient.png",
+        "Metz": "ligue_1/Metz.png",
+        "Clermont": "ligue_1/Clermont.png"
+    }
+    
+    logo_path = club_mapping.get(club_name)
+    if logo_path:
+        full_path = f"logos/{logo_path}"
+        if os.path.exists(full_path):
+            return full_path
+    return None
+
+def get_league_logo(league_name):
+    """Retourne le chemin vers le logo de la ligue."""
+    import os
+    
+    league_mapping = {
+        "Premier League": "logos/PL.png",
+        "La Liga": "logos/Liga.png",
+        "Bundesliga": "logos/Bundesliga.png",
+        "Serie A": "logos/Serie_A.png",
+        "Ligue 1": "logos/L1.png"
+    }
+    
+    logo_path = league_mapping.get(league_name)
+    if logo_path and os.path.exists(logo_path):
+        return logo_path
+    return None
+
+def get_country_flag(country_name):
+    """Retourne l'emoji du drapeau du pays."""
+    country_flags = {
+        "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "Spain": "🇪🇸", "Germany": "🇩🇪", "Italy": "🇮🇹", "France": "🇫🇷",
+        "Brazil": "🇧🇷", "Argentina": "🇦🇷", "Portugal": "🇵🇹", "Netherlands": "🇳🇱", "Belgium": "🇧🇪",
+        "Croatia": "🇭🇷", "Morocco": "🇲🇦", "Serbia": "🇷🇸", "Poland": "🇵🇱", "Ukraine": "🇺🇦",
+        "Denmark": "🇩🇰", "Sweden": "🇸🇪", "Norway": "🇳🇴", "Austria": "🇦🇹", "Switzerland": "🇨🇭",
+        "Czech Republic": "🇨🇿", "Slovakia": "🇸🇰", "Hungary": "🇭🇺", "Slovenia": "🇸🇮", "Finland": "🇫🇮",
+        "Iceland": "🇮🇸", "Ireland": "🇮🇪", "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿", "Wales": "🏴󠁧󠁢󠁷󠁬󠁳󠁿", "Northern Ireland": "🏴󠁧󠁢󠁮󠁩󠁲󠁿",
+        "Turkey": "🇹🇷", "Greece": "🇬🇷", "Bulgaria": "🇧🇬", "Romania": "🇷🇴", "Russia": "🇷🇺",
+        "Japan": "🇯🇵", "South Korea": "🇰🇷", "Australia": "🇦🇺", "United States": "🇺🇸", "Canada": "🇨🇦",
+        "Mexico": "🇲🇽", "Colombia": "🇨🇴", "Uruguay": "🇺🇾", "Chile": "🇨🇱", "Peru": "🇵🇪",
+        "Ecuador": "🇪🇨", "Venezuela": "🇻🇪", "Paraguay": "🇵🇾", "Bolivia": "🇧🇴", "Costa Rica": "🇨🇷",
+        "Nigeria": "🇳🇬", "Ghana": "🇬🇭", "Senegal": "🇸🇳", "Algeria": "🇩🇿", "Tunisia": "🇹🇳",
+        "Egypt": "🇪🇬", "Cameroon": "🇨🇲", "Ivory Coast": "🇨🇮", "Mali": "🇲🇱", "Burkina Faso": "🇧🇫"
+    }
+    return country_flags.get(country_name, "🌍")
+
 @st.cache_data
 def load_data():
     top5_players = pd.read_csv('datas_cleaned/top5-players.csv')
@@ -92,11 +246,18 @@ def get_player_stats(player_name, top5_df, defensive_df, passing_df, keepers_df,
 def display_player_info(player_data):
     if 'general' in player_data:
         info = player_data['general']
+        
+        # Récupérer les logos
+        club_logo = get_club_logo(info.get('Squad', ''))
+        league_logo = get_league_logo(info.get('Comp', ''))
+        country_flag = get_country_flag(info.get('Nation', ''))
+        
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             st.metric("Age", f"{info.get('Age', 'N/A')}")
-            st.metric("Nation", info.get('Nation', 'N/A'))
+            nation_display = f"{country_flag} {info.get('Nation', 'N/A')}" if country_flag else info.get('Nation', 'N/A')
+            st.metric("Nation", nation_display)
         
         with col2:
             detailed_pos = info.get('Detailed_Position', info.get('Pos', 'N/A'))
@@ -105,10 +266,29 @@ def display_player_info(player_data):
                 st.metric("Position", f"{detailed_pos} ({base_pos})")
             else:
                 st.metric("Position", base_pos)
-            st.metric("Squad", info.get('Squad', 'N/A'))
+            
+            # Affichage du club avec logo
+            squad_name = info.get('Squad', 'N/A')
+            if club_logo:
+                col_logo, col_text = st.columns([1, 3])
+                with col_logo:
+                    st.image(club_logo, width=30)
+                with col_text:
+                    st.write(f"**Squad:** {squad_name}")
+            else:
+                st.metric("Squad", squad_name)
         
         with col3:
-            st.metric("Competition", info.get('Comp', 'N/A'))
+            # Affichage de la compétition avec logo
+            comp_name = info.get('Comp', 'N/A')
+            if league_logo:
+                col_logo, col_text = st.columns([1, 3])
+                with col_logo:
+                    st.image(league_logo, width=30)
+                with col_text:
+                    st.write(f"**Competition:** {comp_name}")
+            else:
+                st.metric("Competition", comp_name)
             st.metric("Minutes Played", f"{info.get('Min', 0)}")
         
         with col4:
@@ -117,18 +297,43 @@ def display_player_info(player_data):
     
     elif 'goalkeeper' in player_data:
         info = player_data['goalkeeper']
+        
+        # Récupérer les logos pour les gardiens
+        club_logo = get_club_logo(info.get('Squad', ''))
+        league_logo = get_league_logo(info.get('Comp', ''))
+        country_flag = get_country_flag(info.get('Nation', ''))
+        
         col1, col2, col3, col4 = st.columns(4)
         
         with col1:
             st.metric("Age", f"{info.get('Age', 'N/A')}")
-            st.metric("Nation", info.get('Nation', 'N/A'))
+            nation_display = f"{country_flag} {info.get('Nation', 'N/A')}" if country_flag else info.get('Nation', 'N/A')
+            st.metric("Nation", nation_display)
         
         with col2:
-            st.metric("Position", "GK")
-            st.metric("Squad", info.get('Squad', 'N/A'))
+            st.metric("Position", "🥅 GK")
+            # Affichage du club avec logo
+            squad_name = info.get('Squad', 'N/A')
+            if club_logo:
+                col_logo, col_text = st.columns([1, 3])
+                with col_logo:
+                    st.image(club_logo, width=30)
+                with col_text:
+                    st.write(f"**Squad:** {squad_name}")
+            else:
+                st.metric("Squad", squad_name)
         
         with col3:
-            st.metric("Competition", info.get('Comp', 'N/A'))
+            # Affichage de la compétition avec logo
+            comp_name = info.get('Comp', 'N/A')
+            if league_logo:
+                col_logo, col_text = st.columns([1, 3])
+                with col_logo:
+                    st.image(league_logo, width=30)
+                with col_text:
+                    st.write(f"**Competition:** {comp_name}")
+            else:
+                st.metric("Competition", comp_name)
             st.metric("Minutes Played", f"{info.get('Min', 0)}")
         
         with col4:
@@ -588,7 +793,25 @@ def main():
             if len(comparison_players) >= 2:
                 st.success(f"✅ Comparing {len(comparison_players)} players")
                 for i, player in enumerate(comparison_players, 1):
-                    st.write(f"**{i}.** {player}")
+                    # Récupérer les infos du joueur pour afficher son club
+                    player_stats = get_player_stats(player, top5_df, defensive_df, passing_df, keepers_df, positions_df)
+                    if player_stats and ('general' in player_stats or 'goalkeeper' in player_stats):
+                        info = player_stats.get('general', player_stats.get('goalkeeper', {}))
+                        club_name = info.get('Squad', '')
+                        club_logo = get_club_logo(club_name)
+                        
+                        if club_logo:
+                            col_num, col_logo, col_text = st.columns([0.3, 0.7, 2])
+                            with col_num:
+                                st.write(f"**{i}.**")
+                            with col_logo:
+                                st.image(club_logo, width=20)
+                            with col_text:
+                                st.write(f"**{player}**")
+                        else:
+                            st.write(f"**{i}.** {player}")
+                    else:
+                        st.write(f"**{i}.** {player}")
             else:
                 st.info("💡 Select at least 2 players to enable comparison")
         
@@ -670,6 +893,47 @@ def main():
             
             if comparison_data:
                 comparison_df = pd.DataFrame(comparison_data)
+                
+                # Ajouter une section avec les logos avant le tableau
+                st.write("### 🏆 Teams & Leagues")
+                cols = st.columns(len(comparison_players))
+                
+                for i, player in enumerate(comparison_players):
+                    if player in players_data:
+                        if 'general' in players_data[player]:
+                            info = players_data[player]['general']
+                        elif 'goalkeeper' in players_data[player]:
+                            info = players_data[player]['goalkeeper']
+                        else:
+                            continue
+                        
+                        with cols[i]:
+                            st.write(f"**{player}**")
+                            
+                            # Logo du club
+                            club_name = info.get('Squad', '')
+                            club_logo = get_club_logo(club_name)
+                            if club_logo:
+                                col_logo, col_text = st.columns([1, 2])
+                                with col_logo:
+                                    st.image(club_logo, width=30)
+                                with col_text:
+                                    st.write(club_name)
+                            else:
+                                st.write(f"⚽ {club_name}")
+                            
+                            # Logo de la ligue
+                            league_name = info.get('Comp', '')
+                            league_logo = get_league_logo(league_name)
+                            if league_logo:
+                                col_logo, col_text = st.columns([1, 2])
+                                with col_logo:
+                                    st.image(league_logo, width=30)
+                                with col_text:
+                                    st.write(league_name)
+                            else:
+                                st.write(f"🏆 {league_name}")
+                
                 st.dataframe(
                     comparison_df, 
                     use_container_width=True,
