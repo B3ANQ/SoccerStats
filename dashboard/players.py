@@ -4,7 +4,8 @@ import numpy as np
 import plotly.graph_objects as go
 import plotly.express as px
 
-st.set_page_config(page_title="Soccer Stats Players", layout="wide")
+def show_players():
+    """Fonction principale pour afficher la page des joueurs"""
 
 def get_club_logo(club_name):
     """Retourne le chemin vers le logo du club."""
@@ -582,7 +583,8 @@ def create_comparison_radar(players_data):
     
     return fig
 
-def main():
+def show_players():
+    """Fonction principale pour afficher la page des joueurs"""
     st.title("⚽ Soccer Stats Players Dashboard")
     
     top5_df, defensive_df, passing_df, keepers_df, positions_df = load_data()
@@ -983,4 +985,4 @@ def main():
                 st.metric(f"{league}", count)
 
 if __name__ == "__main__":
-    main()
+    show_players()
