@@ -3,7 +3,6 @@ import pandas as pd
 import plotly.express as px
 
 def show_accueil():
-    """Fonction principale pour afficher la page d'accueil"""
     
     st.markdown("""
         <style>

@@ -4,7 +4,7 @@ import sys
 import os
 
 st.set_page_config(
-    page_title="Football Stats",
+    page_title="SoccerStats",
     page_icon="⚽",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -81,14 +81,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 def main():
-    st.markdown('<h1 class="main-title">Football Stats</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-title">SoccerStats</h1>', unsafe_allow_html=True)
     
     with st.sidebar:
         st.markdown("### 🧭 Navigation")
         
         page = st.selectbox(
             "Choisir une page",
-            ["🏠 Accueil", "👤 Joueurs"],
+            ["🏠 Accueil", "📊 Général", "👤 Joueurs"],
             index=0
         )
         
@@ -107,6 +107,8 @@ def main():
         show_home_page()
     elif page == "👤 Joueurs":
         show_players_page()
+    elif page == "📊 Général":
+        show_general_dashboard_page()
 
 def show_home_page():
     try:
@@ -147,6 +149,27 @@ def show_players_page():
         - 📈 Graphiques radar et visualisations
         
         Veuillez vérifier que le fichier `dashboard/players.py` existe.
+        """)
+    except Exception as e:
+        st.error(f"Erreur inattendue: {e}")
+
+def show_general_dashboard_page():
+    try:
+        from General_Dashboard import show_general_dashboard
+        show_general_dashboard()
+        
+    except ImportError as e:
+        st.error(f"Erreur lors du chargement du dashboard général: {e}")
+        st.markdown("""
+        ### 📊 Dashboard Général
+        
+        Cette page affiche normalement :
+        - 📈 Statistiques générales par ligue
+        - 🏆 Classements et comparaisons
+        - 📊 Visualisations interactives des données
+        - ⚽ Analyses approfondies des performances
+        
+        Veuillez vérifier que le fichier `dashboard/General_Dashboard.py` existe.
         """)
     except Exception as e:
         st.error(f"Erreur inattendue: {e}")
