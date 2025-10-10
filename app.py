@@ -16,116 +16,72 @@ if dashboard_path not in sys.path:
 
 st.markdown("""
     <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
-    
     * {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+        font-family: Arial, sans-serif;
         color: #ffffff;
     }
     
     .main {
         padding-top: 1rem;
-        background-color: #ffffff;
+        background-color: #0e1117;
     }
     
     .css-1d391kg {
-        background-color: #ffffff;
+        background-color: #0e1117;
     }
     
     [data-testid="metric-container"] {
-        background-color: rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.1);
+        background-color: rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
         padding: 1rem;
         border-radius: 0.5rem;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        font-family: 'Inter', sans-serif;
     }
     
     .main-title {
-        font-family: 'Inter', sans-serif;
-        font-size: 3.5rem;
-        font-weight: 800;
+        font-family: Arial, sans-serif;
+        font-size: 3rem;
+        font-weight: bold;
         text-align: center;
-        color: #ffffff;
-        background: #ffffff;
-        background-clip: text;
+        color: #ffffff !important;
         margin-bottom: 2rem;
-        letter-spacing: -0.02em;
-        line-height: 1.1;
     }
     
     .page-header {
-        font-family: 'Inter', sans-serif;
+        font-family: Arial, sans-serif;
         font-size: 2rem;
-        font-weight: 600;
+        font-weight: bold;
         color: #ffffff;
         margin-bottom: 1.5rem;
         text-align: center;
-        letter-spacing: -0.01em;
-        line-height: 1.2;
     }
     
     .stDataFrame {
-        background-color: rgba(0, 0, 0, 0.03);
+        background-color: rgba(255, 255, 255, 0.03);
         border-radius: 10px;
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        font-family: 'Inter', sans-serif;
+        border: 1px solid rgba(255, 255, 255, 0.1);
     }
     
     div[data-baseweb="select"] > div {
-        background-color: rgba(0,0,0,0.1) !important;
+        background-color: rgba(255,255,255,0.1) !important;
         color: #ffffff !important;
         border-radius: 8px;
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 500;
-    }
-    
-    .nav-link {
-        display: block;
-        padding: 0.75rem 1rem;
-        margin: 0.25rem 0;
-        border-radius: 0.5rem;
-        text-decoration: none;
-        color: #ffffff;
-        background-color: rgba(0, 0, 0, 0.05);
-        border: 1px solid rgba(0, 0, 0, 0.1);
-        transition: all 0.3s ease;
-        font-family: 'Inter', sans-serif;
-        font-weight: 500;
-        font-size: 0.95rem;
-        letter-spacing: 0.01em;
-    }
-    
-    .nav-link:hover {
-        background-color: rgba(0, 0, 0, 0.1);
-        transform: translateX(5px);
-    }
-    
-    .nav-link.active {
-        background-color: #667eea;
-        border-color: #667eea;
-        font-weight: 600;
-        color: #ffffff;
     }
     
     h1, h2, h3, h4, h5, h6 {
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 600 !important;
-        letter-spacing: -0.01em !important;
-        color: #FFFFFF !important;
+        font-family: Arial, sans-serif !important;
+        color: #ffffff !important;
     }
     
     .stMarkdown p, .stText, .stSelectbox label {
-        font-family: 'Inter', sans-serif !important;
-        font-weight: 400 !important;
-        line-height: 1.5 !important;
-        color: #FFFFFF !important;
+        font-family: Arial, sans-serif !important;
+        color: #ffffff !important;
     }
     </style>
 """, unsafe_allow_html=True)
 
 def main():
-    st.markdown('<h1 class="main-title">Soccer Stats</h1>', unsafe_allow_html=True)
+    st.markdown('<h1 class="main-title">Football Stats</h1>', unsafe_allow_html=True)
     
     with st.sidebar:
         st.markdown("### 🧭 Navigation")
@@ -140,7 +96,7 @@ def main():
         
         st.markdown("### 📈 Stats rapides")
         try:
-            df = pd.read_csv("datas_cleaned/All_Stats_Field_Player.csv")
+            df = pd.read_csv("datas_cleaned/top5-players.csv")
             st.metric("Total Joueurs", len(df))
             st.metric("Ligues", len(df['Comp'].unique()))
             st.metric("Équipes", len(df['Squad'].unique()))
@@ -162,7 +118,7 @@ def show_home_page():
         st.markdown("""
         ### 🏠 Page d'accueil
         
-        Bienvenue sur SoccerStats Dashboard !
+        Bienvenue sur Football Stats Dashboard !
         
         Cette page affiche normalement :
         - 📊 Classements par ligues

@@ -4,9 +4,7 @@ import matplotlib.pyplot as plt
 import os
 import base64
 
-# --- Fonction helper pour convertir les images en base64 ---
 def get_base64_image(image_path):
-    """Convertit une image en base64 pour l'affichage dans HTML"""
     try:
         with open(image_path, "rb") as img_file:
             return base64.b64encode(img_file.read()).decode()
@@ -14,15 +12,14 @@ def get_base64_image(image_path):
         st.error(f"Erreur lors du chargement de l'image {image_path}: {e}")
         return ""
 
-# --- Chargement des données depuis les fichiers sélectionnés ---
 @st.cache_data
 def load_data():
     data_dir = "datas_cleaned"
     files_to_use = [
-        ("Defensive_with_positions.csv", 1),
+        ("Defensive.csv", 1),
         ("keepers.csv", 0),
-        ("Passing_with_positions.csv", 1),
-        ("top5_players_with_positions.csv", 0)
+        ("Passing.csv", 1),
+        ("top5-players.csv", 0)
     ]
     dfs = []
     for file, header_row in files_to_use:
@@ -37,12 +34,10 @@ df = load_data()
 
 st.title("📊 Dashboard Général des Ligues de Football")
 
-# --- Section 1 : Graphiques généraux ---
 st.header("⚽ Statistiques Générales par Ligue")
 
 col1, col2 = st.columns(2)
 
-# Adapte les noms de colonnes selon tes fichiers
 league_col = 'Comp' if 'Comp' in df.columns else None
 club_col = 'Squad' if 'Squad' in df.columns else None
 position_col = 'Pos' if 'Pos' in df.columns else None
@@ -50,7 +45,6 @@ goals_col = 'Gls' if 'Gls' in df.columns else None
 assists_col = 'Ast' if 'Ast' in df.columns else None
 minutes_col = 'Min' if 'Min' in df.columns else None
 
-# Vérifie que les colonnes existent avant de continuer
 if not all([league_col, club_col, position_col]):
     st.error("Colonnes principales manquantes dans les fichiers CSV. Vérifiez les noms de colonnes.")
     st.stop()
@@ -58,25 +52,18 @@ if not all([league_col, club_col, position_col]):
 
 st.subheader("Buts par match en moyenne par championnat")
 if goals_col and club_col and league_col:
-    # Étape 1 : Total de buts par club
     buts_par_club = df.groupby([league_col, club_col])[goals_col].sum().reset_index()
 
-    # Étape 2 : Total de buts par ligue
     total_buts_par_ligue = buts_par_club.groupby(league_col)[goals_col].sum()
 
-    # Étape 3 : Nombre de clubs par ligue
     nb_clubs_par_ligue = buts_par_club.groupby(league_col)[club_col].nunique()
 
-    # Étape 4 : Calcul du nombre de matchs
     nb_matchs_par_ligue = (nb_clubs_par_ligue * 2) - 2
 
-    # Étape 5 : Calcul moyenne buts par match
     buts_par_journée = total_buts_par_ligue / nb_matchs_par_ligue
 
     buts_par_match = buts_par_journée / (nb_clubs_par_ligue/2)
 
-
-    # Étape 6 : Graphique
     buts_par_match = buts_par_match.sort_values(ascending=True)
     fig, ax = plt.subplots(figsize=(6,4))
     buts_par_match.plot(kind='barh', ax=ax, color='salmon')
@@ -84,7 +71,6 @@ if goals_col and club_col and league_col:
     ax.set_ylabel("Ligue")
     ax.set_title("Moyenne de buts par match par championnat")
 
-    # Ajout des valeurs au bout des barres
     for i, v in enumerate(buts_par_match):
         ax.text(v + 0.02, i, f"{v:.2f}", va='center')
 
@@ -94,10 +80,8 @@ else:
 
 st.markdown("---")
 
-# --- Section 2 : Recherche Avancée ---
 st.header("Recherche Avancée")
 
-# --- Définition des logos et initialisation des sélections ---
 league_logos = {
     "PL.png": ("eng Premier League", "premier_league"),
     "L1.png": ("fr Ligue 1", "ligue_1"),
@@ -113,14 +97,12 @@ if "selected_leagues" not in st.session_state:
 if "selected_clubs" not in st.session_state:
     st.session_state.selected_clubs = []
 
-# --- Sélection MULTIPLE par logos de ligue ---
 st.subheader("Sélectionne une ou plusieurs ligues en cliquant sur leur logo :")
 logo_cols = st.columns(len(league_logos))
 
 for i, (logo_file, (comp_value, folder_name)) in enumerate(league_logos.items()):
     selected = (comp_value, folder_name) in st.session_state.selected_leagues
     with logo_cols[i]:
-        # Bouton avec l'image intégrée
         if st.button(
             comp_value,
             key=f"league_btn_{logo_file}",
@@ -133,7 +115,6 @@ for i, (logo_file, (comp_value, folder_name)) in enumerate(league_logos.items())
                 st.session_state.selected_leagues.append((comp_value, folder_name))
             st.rerun()
         
-        # Affichage du logo avec bordure selon la sélection
         border_color = "#0074D9" if selected else "#DDD"
         border_width = "5px" if selected else "2px"
         st.markdown(
@@ -150,7 +131,6 @@ for i, (logo_file, (comp_value, folder_name)) in enumerate(league_logos.items())
             unsafe_allow_html=True
         )
 
-# --- Construction du mapping club/logo selon les ligues sélectionnées ---
 selected_league_folders = [folder for comp, folder in st.session_state.selected_leagues]
 selected_leagues = [comp for comp, folder in st.session_state.selected_leagues]
 filtered_df = df[df[league_col].isin(selected_leagues)]
@@ -158,23 +138,18 @@ filtered_df = df[df[league_col].isin(selected_leagues)]
 club_logo_map = {}
 for folder_name in selected_league_folders:
     club_logo_dir = os.path.join(logo_dir, folder_name)
-    # Prendre tous les fichiers .png du dossier
     for file in os.listdir(club_logo_dir):
         if file.endswith(".png"):
             club_name = file.replace(".png", "")
-            # Afficher le logo seulement si le club existe dans le DataFrame filtré
             if club_name in set(filtered_df[club_col].dropna().unique()):
                 logo_path = os.path.join(club_logo_dir, file)
                 club_logo_map[club_name] = logo_path
 
-# Initialiser les clubs sélectionnés si changement de ligues
 if not st.session_state.selected_clubs or not all(club in club_logo_map for club in st.session_state.selected_clubs):
     st.session_state.selected_clubs = list(club_logo_map.keys())
 
-# --- Sélection MULTIPLE par logos de club ---
 st.subheader("Sélectionne un ou plusieurs clubs en cliquant sur leur logo :")
 
-# Boutons "Tout sélectionner" / "Tout désélectionner"
 col_sel1, col_sel2 = st.columns([1, 1])
 with col_sel1:
     if st.button("✅ Tout sélectionner"):
@@ -186,7 +161,6 @@ with col_sel2:
         st.rerun()
 
 def chunk_list(lst, n):
-    """Découpe une liste en sous-listes de taille n"""
     for i in range(0, len(lst), n):
         yield lst[i:i + n]
 
@@ -197,7 +171,6 @@ for row_idx, club_row in enumerate(chunk_list(club_items, 10)):
         with club_cols[col_idx]:
             selected = club in st.session_state.selected_clubs
             
-            # Bouton cliquable
             if st.button(
                 "✓" if selected else "○",
                 key=f"club_btn_{club}_{row_idx}_{col_idx}",
@@ -209,7 +182,6 @@ for row_idx, club_row in enumerate(chunk_list(club_items, 10)):
                     st.session_state.selected_clubs.append(club)
                 st.rerun()
             
-            # Logo avec bordure
             border_color = "#0074D9" if selected else "#DDD"
             border_width = "4px" if selected else "2px"
             st.markdown(
@@ -230,18 +202,15 @@ for row_idx, club_row in enumerate(chunk_list(club_items, 10)):
             )
             st.caption(club, help=club)
 
-# --- Filtrage selon les clubs sélectionnés ---
 if st.session_state.selected_clubs:
     filtered_df = filtered_df[filtered_df[club_col].isin(st.session_state.selected_clubs)]
 else:
     st.warning("⚠️ Aucun club sélectionné. Sélectionnez au moins un club.")
-    filtered_df = filtered_df[filtered_df[club_col].isin([])]  # DataFrame vide
+    filtered_df = filtered_df[filtered_df[club_col].isin([])]
 
-# --- Filtrage par catégorie de stats ---
 if not filtered_df.empty:
     st.subheader("Catégorie de statistiques")
     
-    # Définition des catégories de stats
     stats_categories = {
         "Attaque": {
             "stats": ["Gls", "Sh", "SoT", "SoT%", "Sh/90", "SoT/90", "G/Sh", "G/SoT", "Dist", "FK", "PK", "PKatt"],
@@ -261,7 +230,6 @@ if not filtered_df.empty:
         }
     }
     
-    # Sélection de la catégorie
     selected_category = st.selectbox(
         "Choisir une catégorie",
         list(stats_categories.keys()),
@@ -270,18 +238,15 @@ if not filtered_df.empty:
     
     st.info(f"📊 {stats_categories[selected_category]['description']}")
     
-    # Filtrer les stats disponibles dans le DataFrame pour la catégorie choisie
     available_stats = [stat for stat in stats_categories[selected_category]["stats"] if stat in filtered_df.columns]
     
     if not available_stats:
         st.warning(f"⚠️ Aucune statistique de la catégorie '{selected_category}' n'est disponible dans les données.")
     else:
-        # --- Filtrage par poste ---
         postes = filtered_df[position_col].dropna().unique()
         selected_poste = st.selectbox("Poste", postes, index=list(postes).index('BU') if 'BU' in postes else 0)
         filtered_df = filtered_df[filtered_df[position_col] == selected_poste]
         
-        # --- Sélection manuelle des stats à afficher ---
         selected_stats = st.multiselect(
             "Statistiques à observer",
             available_stats,
@@ -290,23 +255,18 @@ if not filtered_df.empty:
         )
         
         if selected_stats:
-            # --- Tableau des joueurs ---
             st.subheader(f"📋 Stats {selected_category} des joueurs filtrés")
             player_cols = ['Player'] if 'Player' in filtered_df.columns else []
             display_cols = player_cols + [league_col, club_col, position_col] + selected_stats
             
-            # Trier par la première stat sélectionnée
             sorted_df = filtered_df[display_cols].sort_values(by=selected_stats[0], ascending=False)
             st.dataframe(sorted_df, use_container_width=True)
             
-            # --- Graphiques selon la catégorie ---
             st.subheader(f"📊 Visualisations - {selected_category}")
             
-            # Slider pour choisir le nombre de joueurs à afficher
             nb_players = st.slider("Nombre de joueurs à afficher dans les graphiques", 5, 20, 10)
             
             if selected_category == "Attaque":
-                # Graphique 1 : Top buteurs
                 if "Gls" in selected_stats and "Gls" in filtered_df.columns:
                     st.markdown("**🎯 Top Buteurs**")
                     top_players = filtered_df.nlargest(nb_players, "Gls")[["Player", "Gls", club_col]]
@@ -321,7 +281,6 @@ if not filtered_df.empty:
                     plt.tight_layout()
                     st.pyplot(fig)
                 
-                # Graphique 2 : Tirs vs Buts (scatter des joueurs)
                 if "Sh" in selected_stats and "Gls" in selected_stats:
                     st.markdown("**📈 Relation Tirs / Buts par joueur**")
                     fig, ax = plt.subplots(figsize=(10, 6))
@@ -333,7 +292,6 @@ if not filtered_df.empty:
                     ax.set_title("Efficacité offensive des joueurs")
                     plt.colorbar(scatter, label='Buts')
                     
-                    # Annoter les meilleurs joueurs
                     top_5 = filtered_df.nlargest(5, "Gls")
                     for idx, row in top_5.iterrows():
                         if pd.notna(row["Sh"]) and pd.notna(row["Gls"]):
@@ -345,7 +303,6 @@ if not filtered_df.empty:
                     st.pyplot(fig)
             
             elif selected_category == "Création de jeu":
-                # Graphique 1 : Top passeurs
                 if "Ast" in selected_stats and "Ast" in filtered_df.columns:
                     st.markdown("**🎯 Top Passeurs décisifs**")
                     top_players = filtered_df.nlargest(nb_players, "Ast")[["Player", "Ast", club_col]]
@@ -360,7 +317,6 @@ if not filtered_df.empty:
                     plt.tight_layout()
                     st.pyplot(fig)
                 
-                # Graphique 2 : Passes complétées par joueur
                 if "Cmp" in selected_stats:
                     st.markdown("**📈 Top joueurs - Passes complétées**")
                     top_players = filtered_df.nlargest(nb_players, "Cmp")[["Player", "Cmp", club_col]]
@@ -376,7 +332,6 @@ if not filtered_df.empty:
                     st.pyplot(fig)
             
             elif selected_category == "Défense":
-                # Graphique 1 : Top tackleurs
                 if "Tkl" in selected_stats and "Tkl" in filtered_df.columns:
                     st.markdown("**🛡️ Top Tackleurs**")
                     top_players = filtered_df.nlargest(nb_players, "Tkl")[["Player", "Tkl", club_col]]
@@ -391,7 +346,6 @@ if not filtered_df.empty:
                     plt.tight_layout()
                     st.pyplot(fig)
                 
-                # Graphique 2 : Interceptions par joueur
                 if "Int" in selected_stats:
                     st.markdown("**🚫 Top joueurs - Interceptions**")
                     top_players = filtered_df.nlargest(nb_players, "Int")[["Player", "Int", club_col]]
@@ -407,7 +361,6 @@ if not filtered_df.empty:
                     st.pyplot(fig)
             
             elif selected_category == "Gardiens":
-                # Graphique 1 : Top gardiens (arrêts)
                 if "Saves" in selected_stats and "Saves" in filtered_df.columns:
                     st.markdown("**🧤 Top Gardiens (Arrêts)**")
                     top_players = filtered_df.nlargest(nb_players, "Saves")[["Player", "Saves", club_col]]
@@ -437,15 +390,12 @@ if not filtered_df.empty:
                     plt.tight_layout()
                     st.pyplot(fig)
             
-            # --- Graphiques de comparaison multi-stats ---
             if len(selected_stats) >= 2:
                 st.markdown("---")
                 st.markdown("**📊 Comparaisons multi-statistiques**")
                 
-                # Top joueurs sur toutes les stats combinées
                 st.markdown(f"**🏅 Top {nb_players} joueurs (moyenne des stats sélectionnées)**")
                 
-                # Normaliser les stats et faire une moyenne
                 normalized_df = filtered_df.copy()
                 for stat in selected_stats:
                     if stat in normalized_df.columns and normalized_df[stat].max() > 0:
